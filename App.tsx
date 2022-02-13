@@ -5,6 +5,7 @@ import { HomeScreen } from "./src/screens/HomeScreen";
 import { DetailsScreen } from "./src/screens/DetailsScreen";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeBaseProvider } from "native-base";
+import { SearchScreen } from "./src/screens/SearchScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -29,6 +30,10 @@ function App() {
                         <Stack.Screen
                             name="DetailsScreen"
                             component={DetailsScreen}
+                        />
+                        <Stack.Screen
+                            name="SearchScreen"
+                            component={SearchScreen}
                         />
                     </Stack.Navigator>
                 </NavigationContainer>
