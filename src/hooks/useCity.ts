@@ -34,7 +34,7 @@ export const useCity = () => {
         })
     }
 
-    const createCity = async (value: Omit<ICity, "isFavorite" | "weather">) => {
+    const createCity = async (value: Omit<ICity, "isFavorite" | "weather">, onSuccess: () => void) => {
         try {
             const weather = await weatherStorage.getWeather(value.lat, value.lng);
             const newValue: ICity = {...value , weather, isFavorite: false};
@@ -47,9 +47,11 @@ export const useCity = () => {
 
             toast.show({
                 status: "success",
-                title: "Sucesso!",
+                title: "Sucesso",
                 description: "Item salvo com sucesso!",
             })
+
+            onSuccess();
         } catch (e: any) {
             toast.show({
                 status: "error",
@@ -65,7 +67,7 @@ export const useCity = () => {
 
             toast.show({
                 status: "success",
-                title: "Sucesso!",
+                title: "Sucesso",
                 description: "Item editado com sucesso!",
             })
         } catch (e: any) {
@@ -95,8 +97,17 @@ export const useCity = () => {
 
     const getAllCity = async(): Promise<ICity[]> => {
         try {
-            const data = await storage.getAllData();
-            return data || [];
+            const data: ICity[] = await storage.getAllData();
+            const sortedData = data.sort((current, next)=>{
+                if(next.isFavorite > current.isFavorite){
+                    return 1;
+                }
+                if(next.isFavorite < current.isFavorite){
+                    return -1;
+                }
+                return 0;
+            })
+            return sortedData || [];
         } catch (e: any) {
 
             throw toast.show({
@@ -117,9 +128,54 @@ export const useCity = () => {
 
             toast.show({
                 status: "success",
-                title: "Previsão da cidade atualizada!",
+                title: "Previsão da cidade atualizada",
                 description: "Atualização da cidade feita com sucesso!",
             })
+        } catch (e: any) {
+            toast.show({
+                status: "error",
+                title: "Erro ao atualizar previsão",
+                description: e.message || "Ocorreu um erro ao salvar a cidade, por favor, tente novamente mais tarde.",
+            })
+        }
+    };
+
+    const addCityToFavorite = async (lat: number, lng: number, onSuccess: () => void) => {
+        try {
+            const city = await getCity(lat, lng);
+            const newValue: ICity = {...city , isFavorite: true};
+
+            await editCity(newValue)
+
+            toast.show({
+                status: "success",
+                title: "Adicionado aos favoritos",
+                description: "Cidade adicionada aos favoritos com sucesso!",
+            })
+            onSuccess();
+        } catch (e: any) {
+            toast.show({
+                status: "error",
+                title: "Erro ao atualizar previsão",
+                description: e.message || "Ocorreu um erro ao salvar a cidade, por favor, tente novamente mais tarde.",
+            })
+        }
+    };
+
+    const removeCityFromFavorite = async (lat: number, lng: number, onSuccess: () => void) => {
+        try {
+            const city = await getCity(lat, lng);
+            const newValue: ICity = {...city, isFavorite: false};
+
+            await editCity(newValue)
+
+            toast.show({
+                status: "success",
+                title: "Removendo dos favoritos",
+                description: "Cidade removida dos favoritos com sucesso!",
+            })
+
+            onSuccess();
         } catch (e: any) {
             toast.show({
                 status: "error",
@@ -135,5 +191,7 @@ export const useCity = () => {
         getCity,
         getAllCity,
         updateCityWeather,
+        addCityToFavorite,
+        removeCityFromFavorite,
     }
 };

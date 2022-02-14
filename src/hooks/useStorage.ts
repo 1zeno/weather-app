@@ -40,7 +40,6 @@ export const useStorage = () => {
         const jsonValue = await AsyncStorage.getItem(storageToken);
         if (jsonValue) {
             const parsedValue = JSON.parse(jsonValue);
-            console.log(parsedValue);
             return parsedValue;
         }
         return null;

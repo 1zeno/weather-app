@@ -8,14 +8,16 @@ import {
     Text,
     IconButton,
     FlatList,
+    Spinner,
 } from "native-base";
-import SearchIcon from "../../assets/search.svg";
+import AddIcon from "../../assets/add.svg";
 import { CityCard } from "../../components";
 import { ICity, useCity } from "../../hooks/useCity";
 
 export const HomeScreen = () => {
 
     const [data, setData] = React.useState<ICity[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
     const isFocused = useIsFocused();
     const cityStorage = useCity();
     const navigation = useNavigation();
@@ -25,9 +27,10 @@ export const HomeScreen = () => {
     de busca`;
 
     const fetch = async () => {
+        setIsLoading(true);
         const cities = await cityStorage.getAllCity();
         setData(cities);
-        console.log(cities);
+        setIsLoading(false);
     }
 
     React.useEffect(() => {
@@ -45,10 +48,13 @@ export const HomeScreen = () => {
                 justifyContent="space-between"
                 alignItems="center"
             >
-                <Text color="white">Cidades</Text>
-                <IconButton icon={<SearchIcon />} onPress={() => navigation.navigate("SearchScreen")} />
+                <Heading size="sm" color="white" >
+                    Cidades
+                </Heading>
+                <IconButton icon={<AddIcon />} onPress={() => navigation.navigate("SearchScreen")} />
             </Flex>
-            <Box background="#FAFAFA" height="100%" p={4}>
+            {isLoading ? (<Spinner marginTop={10} />) : (
+            <Box background="#FAFAFA" height="100%" pb={"66px"} px={4} pt={4}>
                 <FlatList
                     background="#FAFAFA"
                     data={data}
@@ -83,13 +89,21 @@ export const HomeScreen = () => {
                                 currentTemp={item.weather.currentTemp}
                                 weatherDescription={item.weather.weatherDescription}
                                 isFavorite={item.isFavorite}
+                                onFavorite={() => {
+                                    setIsLoading(true);
+                                    if(item.isFavorite){
+                                        cityStorage.removeCityFromFavorite(item.lat,item.lng, () => fetch());
+                                    } else {
+                                        cityStorage.addCityToFavorite(item.lat,item.lng, () => fetch());
+                                    }
+                                }}
                                 onPressCard={() => navigation.navigate("DetailsScreen", { lat: item.lat, lng: item.lng })}
                             />
                         </Box>
-                    )
-                    }
+                    )}
                 />
             </Box>
+            )}
         </>
     );
 };
