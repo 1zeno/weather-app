@@ -3,11 +3,11 @@ import {
     IconButton,
     Input,
     FlatList,
-    useDisclose,
     Box,
     VStack,
     Flex,
     Heading,
+    Text,
 } from "native-base";
 import { OPEN_WEATHER_MAP_API_KEY, OPENCAGE_API_KEY } from "@env";
 import SearchIcon from "../../assets/search.svg";
@@ -15,27 +15,31 @@ import LeftArrowIcon from "../../assets/leftArrow.svg";
 import opencage from "opencage-api-client";
 import { CityCard } from "../../components";
 import { useNavigation } from "@react-navigation/native";
+import axios from "axios";
+import { useCity } from "../../hooks/useCity";
 
 interface IProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
+interface Data {
+    formatted: string,
+    geometry: {
+        lat: number,
+        lng: number,
+    }
+}
+
 export const SearchScreen = () => {
-    const {
-        isOpen,
-        onOpen,
-        onClose
-    } = useDisclose();
     const navigation = useNavigation();
-    const [ data, setData ] = React.useState([]);
+    const cityStorage = useCity();
+    const [ data, setData ] = React.useState<Data[]>([]);
     const [ searchValue, setSearchValue] = React.useState("");
 
     const onSearch = async() => {
         const result = await opencage.geocode({ q: searchValue, key: OPENCAGE_API_KEY });
         setData(result.results)
-        // const uhul = await axios(`api.openweathermap.org/data/2.5/weather?lat=35&lon=139&appid=${OPEN_WEATHER_MAP_API_KEY}`)
-        // console.log(uhul)
     }
 
     return (
@@ -55,7 +59,7 @@ export const SearchScreen = () => {
                     Pesquisar cidade
                 </Heading>
             </Flex>
-            <VStack background="#FAFAFA" height="100%" pb={12} pt={4} px={4} space={4}>
+            <VStack background="#FAFAFA" height="100%" pb={"66px"} pt={4} px={4} space={4}>
                 <Input
                     background="white"
                     color="gray.800"
@@ -72,25 +76,38 @@ export const SearchScreen = () => {
                 <FlatList
                     background="#FAFAFA"
                     data={data}
-                    renderItem={({
-                        item, index, separators
-                    }) => {
+                    ListEmptyComponent={
+                        <Text
+                            color="#889AAD"
+                            textAlign="center"
+                        >
+                            {"Nenhum resultado encontrado"}
+                        </Text>
+                    }
+                    renderItem={({ item }) => {
                         const splitFormatted = item.formatted.split(", ");
+
                         const city = splitFormatted[0];
                         const state = splitFormatted[1];
                         const country = splitFormatted[2];
+                        const lat = item.geometry.lat;
+                        const lng = item.geometry.lng;
 
                         return (
-                            <Box  mb={6}>
+                            <Box mb={6}>
                                 <CityCard
-                                    city={city}
-                                    state={state}
-                                    country={country}
+                                    localization={{
+                                        city,
+                                        state,
+                                        country,
+                                        lat,
+                                        lng,
+                                    }}
+                                    onAdd={cityStorage.createCity}
                                 />
                             </Box>
                         )
-                        }
-                    }
+                    }}
                 />
             </VStack>
         </>
