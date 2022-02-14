@@ -28,11 +28,11 @@ export const DetailsScreen = (props: IProps) => {
     const [isLoading, setIsLoading] = React.useState(true);
 
     const fetch = async () => {
+        setIsLoading(true);
         const forecast = await weatherStorage.getForecast(params.lat, params.lng);
         await cityStorage.updateCityWeather(params.lat, params.lng);
         setData(forecast);
         setIsLoading(false);
-        console.log(forecast);
     }
 
     React.useEffect(() => {
@@ -59,7 +59,7 @@ export const DetailsScreen = (props: IProps) => {
                 </Heading>
             </Flex>
             {isLoading ? (<Spinner marginTop={10} />) : (
-                <Box background="#FAFAFA" height="100%" p={4}>
+                <Box background="#FAFAFA" height="100%" pb={"66px"} px={4} pt={4}>
                     <FlatList
                         background="#FAFAFA"
                         data={data}

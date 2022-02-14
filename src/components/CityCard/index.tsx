@@ -22,8 +22,9 @@ interface IProps {
     currentTemp?: number;
     weatherDescription?: string;
     isFavorite?: boolean;
-    onAdd?: (value: Omit<INewCity, "weather">) => void;
+    onAdd?: () => void;
     onPressCard?: () => void;
+    onFavorite?: () => void;
 }
 
 export const CityCard: React.FC<IProps> = (props) => {
@@ -37,6 +38,7 @@ export const CityCard: React.FC<IProps> = (props) => {
         isFavorite,
         onAdd,
         onPressCard,
+        onFavorite,
     } = props;
 
     const hasWeatherInfo = minTemp && maxTemp && currentTemp && weatherDescription;
@@ -55,7 +57,7 @@ export const CityCard: React.FC<IProps> = (props) => {
                     <HStack justifyContent="space-between">
                         <Box>
                             <Heading size="sm">{localization.city}</Heading>
-                            <Text maxW={100} isTruncated>{localization.state}</Text>
+                            <Text maxW={150} isTruncated>{localization.state}</Text>
                             <Text>{localization.country}</Text>
                         </Box>
                         {hasWeatherInfo && (
@@ -69,15 +71,13 @@ export const CityCard: React.FC<IProps> = (props) => {
                                 <Text>{`${Math.round(minTemp)}º - ${Math.round(maxTemp)}º`}</Text>
                             </Box>
                             {isFavorite !== undefined && (
-                                <Box>
-                                    <IconButton icon={isFavorite ? <FavoriteFilledIcon /> : <FavoriteIcon />} onPress={() => {}} />
-                                </Box>
+                                <IconButton icon={isFavorite ? <FavoriteFilledIcon /> : <FavoriteIcon />} onPress={onFavorite} />
                             )}
                         </HStack>
                     )}
                 </VStack>
                 {onAdd && (
-                    <Button variant="link" onPress={() => onAdd(localization)}>Adicionar</Button>
+                    <Button variant="link" onPress={onAdd}>Adicionar</Button>
                 )}
             </Flex>
         </Pressable>
