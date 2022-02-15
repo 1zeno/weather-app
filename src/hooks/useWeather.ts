@@ -1,49 +1,18 @@
 import axios from "axios";
 import { OPEN_WEATHER_MAP_API_KEY } from "@env";
 import { useToast } from "native-base";
-
-export interface ICity{
-    city: string;
-    state: string;
-    country: string;
-    lat: number;
-    lng: number;
-    isFavorite: boolean;
-}
-
-export interface INewCity{
-    city: string;
-    state: string;
-    country: string;
-    lat: number;
-    lng: number;
-}
-
-export interface IWeather {
-    minTemp: number;
-    maxTemp: number;
-    currentTemp: number;
-    weatherDescription: string;
-}
-
-export interface IForecast {
-    minTemp: number;
-    maxTemp: number;
-    currentTemp: number;
-    weatherDescription: string;
-    date: Date;
-}
+import { Forecast, Weather } from "../types";
 
 export const useWeather = () => {
     const toast = useToast();
 
-    const getWeather = async (lat: number, lng: number): Promise<IWeather> => {
+    const getWeather = async (identity: {lat: number, lng: number}): Promise<Weather> => {
         try{
             const result = await axios("https://api.openweathermap.org/data/2.5/weather",{
                 params: {
                     appid: OPEN_WEATHER_MAP_API_KEY,
-                    lat: lat,
-                    lon: lng,
+                    lat: identity.lat,
+                    lon: identity.lng,
                     units: "metric",
                     lang: "pt_br",
                 }
@@ -65,21 +34,22 @@ export const useWeather = () => {
         }
     };
 
-    const getForecast = async (lat: number, lng: number): Promise<IForecast[]> => {
+    const getForecast = async (identity: {lat: number, lng: number}): Promise<Forecast[]> => {
         try{
             const result = await axios("https://api.openweathermap.org/data/2.5/onecall",{
                 params: {
                     appid: OPEN_WEATHER_MAP_API_KEY,
-                    lat: lat,
-                    lon: lng,
+                    lat: identity.lat,
+                    lon: identity.lng,
                     exclude: ["hourly", "minutely", "alerts"],
                     units: "metric",
                     lang: "pt_br",
                 }
             });
+
             const weathers = result.data.daily;
 
-            const forecast: IForecast[] = weathers.map((value: any)=>{
+            const forecast: Forecast[] = weathers.map((value: any)=>{
             
                 return {
                     minTemp: value.temp.min,

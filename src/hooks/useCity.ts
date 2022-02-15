@@ -1,32 +1,16 @@
 import { useToast } from "native-base";
+import { OPENCAGE_API_KEY } from "@env";
+import opencage from "opencage-api-client";
+import { City, SerachCity } from "../types";
 import { useStorage } from "./useStorage";
-import { IWeather, useWeather } from "./useWeather";
-
-export interface ICity{
-    city: string;
-    state: string;
-    country: string;
-    lat: number;
-    lng: number;
-    weather: IWeather;
-    isFavorite: boolean;
-}
-
-export interface INewCity{
-    city: string;
-    state: string;
-    country: string;
-    lat: number;
-    lng: number;
-    weather: IWeather;
-}
+import { useWeather } from "./useWeather";
 
 export const useCity = () => {
     const toast = useToast();
     const storage = useStorage();
     const weatherStorage = useWeather();
 
-    const validate = (oldValue: ICity[] ,newValue: ICity) => {
+    const validate = (oldValue: City[] ,newValue: City) => {
         oldValue.map((city)=>{
             if((city.lat === newValue.lat) && (city.lng === newValue.lng)){
                 throw new Error("Este item já foi salvo anteriormente.");
@@ -34,10 +18,10 @@ export const useCity = () => {
         })
     }
 
-    const createCity = async (value: Omit<ICity, "isFavorite" | "weather">, onSuccess: () => void) => {
+    const createCity = async (value: Omit<City, "isFavorite" | "weather">, onSuccess: () => void, onError: () => void) => {
         try {
-            const weather = await weatherStorage.getWeather(value.lat, value.lng);
-            const newValue: ICity = {...value , weather, isFavorite: false};
+            const weather = await weatherStorage.getWeather({lat: value.lat, lng: value.lng});
+            const newValue: City = {...value , weather, isFavorite: false};
             const data = await storage.getAllData();
             if(data){
                 validate(data, newValue);
@@ -51,8 +35,10 @@ export const useCity = () => {
                 description: "Item salvo com sucesso!",
             })
 
-            onSuccess();
+            onSuccess()
         } catch (e: any) {
+            onError();
+
             toast.show({
                 status: "error",
                 title: "Erro ao salvar",
@@ -61,7 +47,7 @@ export const useCity = () => {
         }
     };
 
-    const editCity = async (value: ICity) => {
+    const editCity = async (value: City) => {
         try {
             await storage.editData({lat: value.lat, lng: value.lng}, value);
 
@@ -79,10 +65,31 @@ export const useCity = () => {
         }
     };
 
-    const getCity = async (lat: number, lng: number): Promise<ICity> => {
+    const deleteCity = async (indentity: {lat: number, lng: number}, onError?: () => void) => {
         try {
-            const data: ICity[] = await storage.getAllData();
-            const city = data.filter((value: ICity) => ((value.lat === lat) && (value.lng === lng)))
+            await storage.deleteData(indentity);
+
+            toast.show({
+                status: "success",
+                title: "Sucesso",
+                description: "Item deletado com sucesso!",
+            })
+        } catch (e: any) {
+            if(onError){
+                onError();
+            }
+            toast.show({
+                status: "error",
+                title: "Erro ao deletar",
+                description: e.message || "Ocorreu um erro ao deletar a cidade, por favor, tente novamente mais tarde.",
+            })
+        }
+    };
+
+    const getCity = async (identity: {lat: number, lng: number}): Promise<City> => {
+        try {
+            const data: City[] = await storage.getAllData();
+            const city = data.filter((value: City) => ((value.lat === identity.lat) && (value.lng === identity.lng)))
 
             return city[0];
 
@@ -95,9 +102,14 @@ export const useCity = () => {
         }
     };
 
-    const getAllCity = async(): Promise<ICity[]> => {
+    const getAllCity = async(onError: () => void): Promise<City[]> => {
         try {
-            const data: ICity[] = await storage.getAllData();
+            const data: City[] | null = await storage.getAllData();
+
+            if(!data){
+                throw new Error("Ainda há cidades cadastradas.")
+            }
+    
             const sortedData = data.sort((current, next)=>{
                 if(next.isFavorite > current.isFavorite){
                     return 1;
@@ -107,8 +119,10 @@ export const useCity = () => {
                 }
                 return 0;
             })
+
             return sortedData || [];
         } catch (e: any) {
+            onError();
 
             throw toast.show({
                 status: "error",
@@ -118,11 +132,11 @@ export const useCity = () => {
         }
     }
 
-    const updateCityWeather = async (lat: number, lng: number) => {
+    const updateCityWeather = async (identity: {lat: number, lng: number}) => {
         try {
-            const weather = await weatherStorage.getWeather(lat, lng);
-            const city = await getCity(lat, lng);
-            const newValue: ICity = {...city , weather};
+            const weather = await weatherStorage.getWeather(identity);
+            const city = await getCity(identity);
+            const newValue: City = {...city , weather};
 
             await editCity(newValue)
 
@@ -140,10 +154,10 @@ export const useCity = () => {
         }
     };
 
-    const addCityToFavorite = async (lat: number, lng: number, onSuccess: () => void) => {
+    const addCityToFavorite = async (identity: {lat: number, lng: number}, onSuccess: () => void) => {
         try {
-            const city = await getCity(lat, lng);
-            const newValue: ICity = {...city , isFavorite: true};
+            const city = await getCity(identity);
+            const newValue: City = {...city , isFavorite: true};
 
             await editCity(newValue)
 
@@ -152,7 +166,8 @@ export const useCity = () => {
                 title: "Adicionado aos favoritos",
                 description: "Cidade adicionada aos favoritos com sucesso!",
             })
-            onSuccess();
+
+            onSuccess()
         } catch (e: any) {
             toast.show({
                 status: "error",
@@ -162,10 +177,10 @@ export const useCity = () => {
         }
     };
 
-    const removeCityFromFavorite = async (lat: number, lng: number, onSuccess: () => void) => {
+    const removeCityFromFavorite = async (identity: {lat: number, lng: number}, onSuccess: () => void) => {
         try {
-            const city = await getCity(lat, lng);
-            const newValue: ICity = {...city, isFavorite: false};
+            const city = await getCity(identity);
+            const newValue: City = {...city, isFavorite: false};
 
             await editCity(newValue)
 
@@ -185,13 +200,30 @@ export const useCity = () => {
         }
     };
 
+    const searchCity = async (searchValue: string, onError: () => void): Promise<SerachCity[]> => {
+        try{
+            const searchResult = await opencage.geocode({ q: searchValue, key: OPENCAGE_API_KEY });
+            return searchResult.results;
+        }catch(e: any){
+            onError();
+
+            throw toast.show({
+                status: "error",
+                title: "Erro ao buscar cidades",
+                description: e.message || "Ocorreu um erro ao buscar as cidades.",
+            })
+        }
+    }
+
     return {
         createCity,
         editCity,
+        deleteCity,
         getCity,
         getAllCity,
         updateCityWeather,
         addCityToFavorite,
         removeCityFromFavorite,
+        searchCity,
     }
 };

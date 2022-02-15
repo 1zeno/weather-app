@@ -12,38 +12,40 @@ import {
     Spinner,
 } from "native-base";
 import { OPENCAGE_API_KEY } from "@env";
+import opencage from "opencage-api-client";
 import SearchIcon from "../../assets/search.svg";
 import LeftArrowIcon from "../../assets/leftArrow.svg";
-import opencage from "opencage-api-client";
-import { CityCard } from "../../components";
-import { useNavigation } from "@react-navigation/native";
+import { SearchCard } from "../../components";
 import { useCity } from "../../hooks/useCity";
+import { useNavigator } from "../../hooks/useNavigator";
+import { NewCity, SerachCity } from "../../types";
 
 interface IProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-interface Data {
-    formatted: string,
-    geometry: {
-        lat: number,
-        lng: number,
-    }
-}
-
 export const SearchScreen = () => {
-    const navigation = useNavigation();
+    const navigator = useNavigator();
     const cityStorage = useCity();
-    const [ data, setData ] = React.useState<Data[]>([]);
+    const [ data, setData ] = React.useState<SerachCity[]>([]);
     const [ searchValue, setSearchValue] = React.useState("");
     const [ isLoading, setIsLoading ] = React.useState(false);
 
-    const onSearch = async() => {
+    const onSearch = async () => {
         setIsLoading(true);
-        const result = await opencage.geocode({ q: searchValue, key: OPENCAGE_API_KEY });
-        setData(result.results);
+        const searchData = await cityStorage.searchCity(searchValue, () => setIsLoading(false));
+        setData(searchData);
         setIsLoading(false);
+    }
+
+    const onCreate = async (localization: NewCity) => {
+        setIsLoading(true);
+        await cityStorage.createCity(
+            localization,
+            () => navigator.push("HomeScreen"),
+            () => setIsLoading(false),
+        );
     }
 
     return (
@@ -57,10 +59,10 @@ export const SearchScreen = () => {
                 <IconButton
                     background="#3AA7F4"
                     icon={<LeftArrowIcon />}
-                    onPress={navigation.goBack}
+                    onPress={navigator.goBack}
                 />
                 <Heading size="sm" color="white" pl={4}>
-                    Pesquisar cidade
+                    {"Pesquisar cidade"}
                 </Heading>
             </Flex>
                 <VStack background="#FAFAFA" height="100%" pb={"66px"} pt={4} px={4} space={4}>
@@ -103,7 +105,7 @@ export const SearchScreen = () => {
                             const lat = item.geometry.lat;
                             const lng = item.geometry.lng;
 
-                            const localization = {
+                            const localization: NewCity = {
                                 city,
                                 state,
                                 country,
@@ -113,15 +115,9 @@ export const SearchScreen = () => {
 
                             return (
                                 <Box mb={6}>
-                                    <CityCard
+                                    <SearchCard
                                         localization={localization}
-                                        onAdd={()=>{
-                                            setIsLoading(true);
-                                            cityStorage.createCity(localization,() => {
-                                                navigation.navigate("HomeScreen");
-                                                setIsLoading(false);
-                                            });
-                                        }}
+                                        onAdd={()=>onCreate(localization)}
                                     />
                                 </Box>
                             )
