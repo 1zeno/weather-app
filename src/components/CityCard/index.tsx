@@ -12,36 +12,34 @@ import {
 import { Pressable } from "react-native";
 import FavoriteIcon from "../../assets/favorite.svg";
 import FavoriteFilledIcon from "../../assets/favoriteFilled.svg";
+import DeleteIcon from "../../assets/delete.svg";
+import RefreshIcon from "../../assets/refresh.svg";
 import { format } from "../../resources/format";
-import { INewCity } from "../../hooks/useCity";
+import { City } from "../../types";
 
 interface IProps {
-    localization: Omit<INewCity, "weather">;
-    minTemp?: number;
-    maxTemp?: number;
-    currentTemp?: number;
-    weatherDescription?: string;
-    isFavorite?: boolean;
-    onAdd?: () => void;
-    onPressCard?: () => void;
-    onFavorite?: () => void;
+    city: City;
+    isCelsius: boolean;
+    onDelete: () => void;
+    onRefresh: () => void;
+    onPressCard: () => void;
+    onFavorite: () => void;
 }
 
 export const CityCard: React.FC<IProps> = (props) => {
 
     const {
-        localization,
-        minTemp,
-        maxTemp,
-        currentTemp,
-        weatherDescription,
-        isFavorite,
-        onAdd,
+        city,
+        isCelsius,
+        onDelete,
+        onRefresh,
         onPressCard,
         onFavorite,
     } = props;
 
-    const hasWeatherInfo = minTemp && maxTemp && currentTemp && weatherDescription;
+    const treatTemperature = (temperature: number) => {
+        return Math.round(temperature);
+    }
 
     return (
         <Pressable onPress={onPressCard}>
@@ -56,29 +54,34 @@ export const CityCard: React.FC<IProps> = (props) => {
                 <VStack space={2}>
                     <HStack justifyContent="space-between">
                         <Box>
-                            <Heading size="sm">{localization.city}</Heading>
-                            <Text maxW={150} isTruncated>{localization.state}</Text>
-                            <Text>{localization.country}</Text>
+                            <Heading size="sm">{city.city}</Heading>
+                            <Text maxW={150} isTruncated>{city.state}</Text>
+                            <Text>{city.country}</Text>
                         </Box>
-                        {hasWeatherInfo && (
-                            <Heading size="md" color="#F17800">{`${Math.round(currentTemp)}º`}</Heading>
-                        )}
+                        <Heading size="md" color="#F17800">
+                            {isCelsius ?
+                                `${treatTemperature(city.weather.currentTemp)}º`
+                                :
+                                `${treatTemperature(format.toFahrenheit(city.weather.currentTemp))}º`
+                            }
+                        </Heading>
                     </HStack>
-                    {hasWeatherInfo && (
-                        <HStack justifyContent="space-between">
-                            <Box>
-                                <Text color="#F5A64C">{format.initialUpperCase(weatherDescription)}</Text>
-                                <Text>{`${Math.round(minTemp)}º - ${Math.round(maxTemp)}º`}</Text>
-                            </Box>
-                            {isFavorite !== undefined && (
-                                <IconButton icon={isFavorite ? <FavoriteFilledIcon /> : <FavoriteIcon />} onPress={onFavorite} />
-                            )}
-                        </HStack>
-                    )}
+                    <HStack>
+                        <Box flex={1}>
+                            <Text color="#F5A64C">{format.initialUpperCase(city.weather.weatherDescription)}</Text>
+                            <Text>
+                                {isCelsius ?
+                                    `${treatTemperature(city.weather.minTemp)}º - ${treatTemperature(city.weather.maxTemp)}º`
+                                    :
+                                    `${treatTemperature(format.toFahrenheit(city.weather.minTemp))}º - ${treatTemperature(format.toFahrenheit(city.weather.maxTemp))}º`
+                                }
+                            </Text>
+                        </Box>
+                        <IconButton icon={<RefreshIcon />} onPress={onRefresh} />
+                        <IconButton icon={<DeleteIcon />} onPress={onDelete} />
+                        <IconButton icon={city.isFavorite ? <FavoriteFilledIcon /> : <FavoriteIcon />} onPress={onFavorite} />
+                    </HStack>
                 </VStack>
-                {onAdd && (
-                    <Button variant="link" onPress={onAdd}>Adicionar</Button>
-                )}
             </Flex>
         </Pressable>
     )
