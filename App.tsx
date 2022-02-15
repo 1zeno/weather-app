@@ -6,6 +6,7 @@ import { DetailsScreen } from "./src/screens/DetailsScreen";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeBaseProvider } from "native-base";
 import { SearchScreen } from "./src/screens/SearchScreen";
+import { GlobalContextProvider } from "./src/contexts/globalContext";
 
 const Stack = createNativeStackNavigator();
 
@@ -17,27 +18,29 @@ function App() {
                 backgroundColor: "#3AA7F4",
             }}
         >
-            <NativeBaseProvider>
-                <NavigationContainer>
-                    <Stack.Navigator
-                        screenOptions={{ headerShown: false }}
-                        initialRouteName="HomeScreen"
-                    >
-                        <Stack.Screen
-                            name="HomeScreen"
-                            component={HomeScreen}
-                        />
-                        <Stack.Screen
-                            name="DetailsScreen"
-                            component={DetailsScreen}
-                        />
-                        <Stack.Screen
-                            name="SearchScreen"
-                            component={SearchScreen}
-                        />
-                    </Stack.Navigator>
-                </NavigationContainer>
-            </NativeBaseProvider>
+            <GlobalContextProvider>
+                <NativeBaseProvider>
+                    <NavigationContainer>
+                        <Stack.Navigator
+                            screenOptions={{ headerShown: false }}
+                            initialRouteName="HomeScreen"
+                        >
+                            <Stack.Screen
+                                name="HomeScreen"
+                                component={HomeScreen}
+                            />
+                            <Stack.Screen
+                                name="DetailsScreen"
+                                component={DetailsScreen}
+                            />
+                            <Stack.Screen
+                                name="SearchScreen"
+                                component={SearchScreen}
+                            />
+                        </Stack.Navigator>
+                    </NavigationContainer>
+                </NativeBaseProvider>
+            </GlobalContextProvider>
         </SafeAreaView>
     );
 }
