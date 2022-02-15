@@ -8,5 +8,16 @@
 ```
 OPENCAGE_API_KEY={API_KEY}
 OPEN_WEATHER_MAP_API_KEY={API_KEY}
-
+```
+### Features realizadas:
+```
+- Lista de cidades adicionada pelo usuário.
+- Buscar cidades.
+- Detalhes da cidade.
+- Manter os dados salvos entre sessões de usos da aplicação.
+- Opção de atualizar os dados da cidade.
+- Exibir previsão do tempo dos próximos dias.
+- Definir cidade como favorita.
+- Alternar entre Celsius e Fahrenheit.
+- Remover cidade da lista.
 ```
